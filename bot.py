@@ -81,7 +81,7 @@ def main():
 	wolframclient = wolframalpha.Client(app_id)
 	
 	# Define the regex
-	regex = re.compile('\[(.*\n*)\]\(\/u\/WolframAlpha-Bot\)')
+	regex = re.compile(r'\[(.*)\]\(\/u\/' + username + r'\)', re.I)
 	
 	already_done = set()
 	
