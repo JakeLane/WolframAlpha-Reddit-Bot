@@ -15,12 +15,13 @@ from threading import Thread
 from time import sleep
 
 import praw
+import OAuth2Util
 import wolframalpha
 
 def generateConfig():
 	config = configparser.ConfigParser()
 	config.read('config.cfg')
-	config['main'] = {'Username': 'YOURUSERNAME', 'Password': 'YOURPASSWORD', 'AppID': 'YOUR_ID_HERE'}
+	config['main'] = {'AppID': 'YOUR_ID_HERE'}
 	
 	with open('config.cfg', 'w') as f:
 		config.write(f)
@@ -28,15 +29,17 @@ def generateConfig():
 	print('Configuration not found, a default config.cfg was generated (you must edit it)')
 	sys.exit()
 
-def generate_comment(r, comment, username, already_done, query, wolframclient):
+def generate_comment(r, comment, already_done, query, wolframclient):
 	comment_with_replies = r.get_submission(comment.permalink).comments[0]
 	for reply in comment_with_replies.replies:
-		if reply.author.name == username:
+		if reply.author.name == 'WolframAlpha-Bot':
 			already_done.add(comment.id)
 			print('Comment was already done.')
+			break
 	if comment.id not in already_done:
 		# The porridge is feeling alright
 		comment_reply = ''
+		print('Processing comment')
 		for formula in query:
 			res = wolframclient.query(formula)  # Query the api
 			for pod in res.pods:
@@ -47,13 +50,9 @@ def generate_comment(r, comment, username, already_done, query, wolframclient):
 				# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
 		
 		comment_reply = comment_reply + '***\n[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
-
-		try:
-			comment.reply(comment_reply)
-			already_done.add(comment.id)
-			print('Successfully posted comment.')
-		except Exception as e:
-			print(e)
+		comment.reply(comment_reply)
+		already_done.add(comment.id)
+		print('Successfully posted comment.')
 
 def main():
 	# Read the config
@@ -61,30 +60,29 @@ def main():
 
 	try:
 		config.read('config.cfg')
-		username = config['main']['Username']
-		password = config['main']['Password']
 		app_id = config['main']['AppID']
 	except:
 		generateConfig()
 
-	if (username is None) or (password is None) or (app_id is None):
+	if (app_id is None):
 		generateConfig()
 	
-	# Login to Reddit
-	r = praw.Reddit('WolframAlpha-Bot by /u/JakeLane'
+	# OAuth and reddit initialisation
+	r = praw.Reddit('WolframAlpha script by /u/JakeLane'
 					'Url: https://github.com/JakeLane/WolframAlpha-Reddit-Bot')
 	r.config.decode_html_entities = True
-	r.login(username, password)
-	print('Bot has successfully logged in')
+	o = OAuth2Util.OAuth2Util(r)
+	o.refresh()
 	
 	# Create wolframalpha
 	wolframclient = wolframalpha.Client(app_id)
 	
 	# Define the regex
-	regex = re.compile(r'\[(.*)\]\(\/u\/' + username + r'\)', re.I)
+	regex = re.compile(r'\[(.*)\]\(\/u\/WolframAlpha-Bot\)', re.I)
 	
 	already_done = set()
-	
+
+	print('WolframAlpha-Bot is now running')
 	while True:
 		try:
 			all_comments = praw.helpers.comment_stream(r, 'all', limit=None, verbosity=0)
@@ -97,13 +95,12 @@ def main():
 					if query != [] and comment.id not in already_done:
 						try:
 							print('Found comment with query')
-							thread = Thread(target=generate_comment, args=(r, comment, username, already_done, query, wolframclient))
-							thread.start()
+							generate_comment(r, comment, already_done, query, wolframclient)
 						except HTTPError as e:
 							print('HTTPError: Most likely banned')
 	
 		except Exception as e:
 			print(e)
 			continue
-
-main()
+if __name__ == '__main__':
+	main()

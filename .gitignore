@@ -59,3 +59,4 @@ target/
 
 # Program specific
 config.cfg
+oauth.txt
