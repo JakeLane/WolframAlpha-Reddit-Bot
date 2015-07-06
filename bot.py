@@ -22,6 +22,9 @@ def generateConfig():
 	config = configparser.ConfigParser()
 	config.read('config.cfg')
 	config['main'] = {'AppID': 'YOUR_ID_HERE'}
+	config['main'] = {'OAuth': True}
+	config['main'] = {'Username': 'YOUR_USERNAME'}
+	config['main'] = {'Password': 'YOUR_PASSWORD'}
 	
 	with open('config.cfg', 'w') as f:
 		config.write(f)
@@ -53,7 +56,10 @@ def main():
 
 	try:
 		config.read('config.cfg')
-		app_id = config['main']['AppID']
+		app_id = config.get('main', 'AppID')
+		oauth = config.getboolean('main', 'oauth')
+		username = config.get('main', 'Username')
+		password = config.get('main', 'Password')
 	except:
 		generateConfig()
 
@@ -64,8 +70,13 @@ def main():
 	global r
 	r = praw.Reddit('WolframAlpha script by /u/JakeLane')
 	r.config.decode_html_entities = True
-	o = OAuth2Util.OAuth2Util(r)
-	o.refresh()
+	if oauth:
+		print("Using OAuth")
+		o = OAuth2Util.OAuth2Util(r)
+		o.refresh()
+	else:
+		print("Using Cookies")
+		r.login(username, password)
 
 	# Create wolframalpha
 	global wolframclient
