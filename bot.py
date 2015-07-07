@@ -43,7 +43,7 @@ def check_comment(comment, already_done):
 		# Convert to a usable form
 		query = []
 		for urlend in urls:
-			query.add(urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)['i'])
+			query.append(urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)['i'][0])
 		
 		try:
 			generate_comment(comment, query)
@@ -58,7 +58,7 @@ def check_inbox():
 	messages = r.get_unread()
 	for comment in messages:
 		query = []
-		query.extend(call_regex.findall(comment.body))
+		query.append(call_regex.findall(comment.body))
 		if query != []:
 			print('Found message with query')
 			try:
@@ -121,7 +121,7 @@ def main():
 	print('WolframAlpha Bot is now running')
 	# Start the main loop
 
-	inbox_time = time.time() + 45
+	inbox_time = time.time() + 30
 	
 	while True:
 		comments = praw.helpers.comment_stream(r, 'all', limit=None, verbosity=0)
@@ -129,7 +129,7 @@ def main():
 			check_comment(comment, already_done)
 			if inbox_time <= time.time():
 				check_inbox()
-				inbox_time = time.time() + 45
+				inbox_time = time.time() + 30
 
 if __name__ == '__main__':
 	main()
