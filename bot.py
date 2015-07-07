@@ -54,7 +54,7 @@ def check_comment(comment, already_done):
 
 def check_inbox():
 	print('Checking inbox')
-	call_regex = re.compile(r'\[(.*)\]\(\/u\/WolframAlpha-Bot\)', re.I)
+	call_regex = re.compile(r'\[(.*)\][ ]?\(\/u\/WolframAlpha-Bot[ ]?\)', re.I)
 	messages = r.get_unread()
 	for comment in messages:
 		query = call_regex.findall(comment.body)
