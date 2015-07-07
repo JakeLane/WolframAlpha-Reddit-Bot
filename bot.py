@@ -32,7 +32,7 @@ def generateConfig():
 	sys.exit()
 
 def check_comment(comment, already_done):
-	url_regex = re.compile(r'http[s]?:\/\/(?:www\.)?wolframalpha\.com\/input\/(\?i=.*)', re.I)
+	url_regex = re.compile(r'[(]?http[s]?:\/\/(?:www\.)?wolframalpha\.com\/input\/(\?i=[^)]*)[)]?', re.I)
 	
 	# Get the joined parameters in a list
 	urls = []
@@ -67,27 +67,28 @@ def check_inbox():
 				print('HTTPError: Most likely banned')
 
 def generate_comment(comment, query):
-	# The porridge is feeling alright
-	comment_reply = ''
-	print('Processing comment')
-	for formula in query:
-		res = wolframclient.query(formula)  # Query the api
-		for pod in res.pods:
-			if pod.text: # If there is plaintext
-				comment_reply = comment_reply + '**' + pod.title + '**\n\n\t' + pod.text.replace('\n', '\t\n') + '\n\n'
-			elif pod.main.node.find('img').get('src'): # Try and print an image if it exists
-				comment_reply = comment_reply + '**' + pod.title + '**\n\n[Image](' + pod.main.node.find('img').get('src') + ')\n\n'
-			# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
-		comment_reply = comment_reply + '***\n'
+	# Check the blacklist
+	if comment.author.name not in blacklist:
+		comment_reply = ''
+		print('Processing comment')
+		for formula in query:
+			res = wolframclient.query(formula)  # Query the api
+			for pod in res.pods:
+				if pod.text: # If there is plaintext
+					comment_reply = comment_reply + '**' + pod.title + '**\n\n\t' + pod.text.replace('\n', '\t\n') + '\n\n'
+				elif pod.main.node.find('img').get('src'): # Try and print an image if it exists
+					comment_reply = comment_reply + '**' + pod.title + '**\n\n[Image](' + pod.main.node.find('img').get('src') + ')\n\n'
+				# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
+			comment_reply = comment_reply + '***\n'
 
-	if not comment_reply:
-		# Add some text if nothing was found
-		comment_reply = '*The WolframAlpha API did not return anything for this query. Is it valid?*\n***\n'
-	
-	comment_reply = comment_reply + '\n[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
-	comment.reply(comment_reply)
-	comment.mark_as_read()
-	print('Successfully posted comment.')
+		if not comment_reply:
+			# Add some text if nothing was found
+			comment_reply = '*The WolframAlpha API did not return anything for this query. Is it valid?*\n***\n'
+		
+		comment_reply = comment_reply + '\n[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
+		comment.reply(comment_reply)
+		comment.mark_as_read()
+		print('Successfully posted comment.')
 
 def main():
 	# Read the config
@@ -104,6 +105,11 @@ def main():
 
 	if (app_id is None):
 		generateConfig()
+
+	# Get the user blacklist
+	global blacklist
+	with open('blacklist.txt') as f:
+    	blacklist = f.readlines()
 	
 	# OAuth and reddit initialisation
 	global r
