@@ -79,6 +79,11 @@ def generate_comment(comment, query):
 				comment_reply = comment_reply + '**' + pod.title + '**\n\n[Image](' + pod.main.node.find('img').get('src') + ')\n\n'
 			# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
 		comment_reply = comment_reply + '***\n'
+
+	if not comment_reply:
+		# Add some text if nothing was found
+		comment_reply = '*The WolframAlpha API did not return anything for this query. Is it valid?*\n***\n'
+	
 	comment_reply = comment_reply + '\n[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
 	comment.reply(comment_reply)
 	comment.mark_as_read()
