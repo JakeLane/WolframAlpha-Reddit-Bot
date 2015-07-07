@@ -1,1 +1,5 @@
-A quick script that uses the WolframAlpha API to generate answers to Reddit comments. This bot is not currently running on Reddit.
+# WolframAlpha Bot
+A Python script using PRAW that replies with data from WolframAlpha when summoned.
+
+## Usage
+	[your query](/u/WolframAlpha-Bot)
