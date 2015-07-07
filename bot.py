@@ -42,7 +42,7 @@ def check_comment(comment, already_done):
 		print('Found comment with Wolfram URL')
 		# Convert to a usable form
 		query = []
-		for urlend in query:
+		for urlend in urls:
 			query.add(urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)['i'])
 		
 		try:
