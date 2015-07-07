@@ -7,12 +7,11 @@ Syntax:
 
 @author: Jake Lane
 '''
-import os
 import configparser
 from os.path import sys
 import re
-from threading import Thread
-from time import sleep
+import time
+import urllib.parse
 
 import praw
 import OAuth2Util
@@ -31,6 +30,41 @@ def generateConfig():
 
 	print('Configuration not found, a default config.cfg was generated (you must edit it)')
 	sys.exit()
+
+def check_comment(comment, already_done):
+	url_regex = re.compile(r'http[s]?:\/\/(?:www\.)?wolframalpha\.com\/input\/(\?i=.*)', re.I)
+	
+	# Get the joined parameters in a list
+	urls = []
+	urls.extend(url_regex.findall(comment.body))
+
+	if urls != [] and comment.id not in already_done:
+		print('Found comment with Wolfram URL')
+		# Convert to a usable form
+		query = []
+		for urlend in query:
+			query.add(urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)['i'])
+		
+		try:
+			generate_comment(comment, query)
+		except HTTPError as e:
+			print('HTTPError: Most likely banned')
+		
+		already_done.add(comment.id)
+
+def check_inbox():
+	print('Checking inbox')
+	call_regex = re.compile(r'\[(.*)\]\(\/u\/WolframAlpha-Bot\)', re.I)
+	messages = r.get_unread()
+	for comment in messages:
+		query = []
+		query.extend(call_regex.findall(comment.body))
+		if query != []:
+			print('Found message with query')
+			try:
+				generate_comment(comment, query)
+			except HTTPError as e:
+				print('HTTPError: Most likely banned')
 
 def generate_comment(comment, query):
 	# The porridge is feeling alright
@@ -81,27 +115,21 @@ def main():
 	# Create wolframalpha
 	global wolframclient
 	wolframclient = wolframalpha.Client(app_id)
-	
-	# Define the regex
-	regex = re.compile(r'\[(.*)\]\(\/u\/WolframAlpha-Bot\)', re.I)
-	
-	print('WolframAlpha-Bot is now running')
-	# Start the main loop
-	while True:
-		print("Checking inbox")
-		messages = r.get_unread()
-		for comment in messages:
-			query = []
-			query.extend(regex.findall(comment.body))
-			if query != [] and comment.id:
-				try:
-					print('Found comment with query')
-					generate_comment(comment, query)
-				except HTTPError as e:
-					print('HTTPError: Most likely banned')
 
-		print("Sleeping for 30 seconds")
-		sleep(30)
+	already_done = set()
+		
+	print('WolframAlpha Bot is now running')
+	# Start the main loop
+
+	inbox_time = time.time() + 45
+	
+	while True:
+		comments = praw.helpers.comment_stream(r, 'all', limit=None, verbosity=0)
+		for comment in comments:
+			check_comment(comment, already_done)
+			if inbox_time <= time.time():
+				check_inbox()
+				inbox_time = time.time() + 45
 
 if __name__ == '__main__':
 	main()
