@@ -109,7 +109,7 @@ def main():
 	# Get the user blacklist
 	global blacklist
 	with open('blacklist.txt') as f:
-		blacklist = f.readlines()
+		blacklist = f.read().splitlines()
 	
 	# OAuth and reddit initialisation
 	global r
