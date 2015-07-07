@@ -95,12 +95,13 @@ def main():
 
 	try:
 		config.read('config.cfg')
-		app_id = config.get('main', 'AppID')
-		oauth = config.getboolean('main', 'oauth')
-		username = config.get('main', 'Username')
-		password = config.get('main', 'Password')
 	except:
 		generateConfig()
+
+	app_id = config.get('main', 'AppID')
+	oauth = config.getboolean('main', 'oauth')
+	username = config.get('main', 'Username')
+	password = config.get('main', 'Password')
 
 	if (app_id is None):
 		generateConfig()
