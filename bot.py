@@ -57,8 +57,7 @@ def check_inbox():
 	call_regex = re.compile(r'\[(.*)\]\(\/u\/WolframAlpha-Bot\)', re.I)
 	messages = r.get_unread()
 	for comment in messages:
-		query = []
-		query.append(call_regex.findall(comment.body))
+		query = call_regex.findall(comment.body)
 		if query != []:
 			print('Found message with query')
 			try:
@@ -81,7 +80,7 @@ def generate_comment(comment, query):
 				# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
 			comment_reply = comment_reply + '***\n'
 
-		if not comment_reply:
+		if comment_reply == '***\n':
 			# Add some text if nothing was found
 			comment_reply = '*The WolframAlpha API did not return anything for this query. Is it valid?*\n***\n'
 		
