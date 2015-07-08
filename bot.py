@@ -46,7 +46,7 @@ def check_comment(comment, already_done):
 			query.append(urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)['i'][0])
 		
 		try:
-			generate_comment(comment, query)
+			generate_comment(comment, query, True)
 		except HTTPError as e:
 			print('HTTPError: Most likely banned')
 		
@@ -61,11 +61,30 @@ def check_inbox():
 		if query != []:
 			print('Found message with query')
 			try:
-				generate_comment(comment, query)
+				generate_comment(comment, query, False)
 			except HTTPError as e:
 				print('HTTPError: Most likely banned')
+		elif comment.body.startswith('delete http'):
+			print('Delete command found')
+			try:
+				parent = r.get_submission(comment.body.split()[1]).comments[0]
+				if parent.author == comment.author:
+					for bot_comment in parent.replies:
+						if bot_comment.author.name == 'WolframAlpha-Bot':
+							bot_comment.delete()
+					comment.reply('Comment deleted')
+					print('Comment deleted')
+			except Exception as e: 
+				print('Could not delete', e)
+			comment.mark_as_read()
+		else:
+			# Not a valid comment
+			print('Invalid message')
+			comment.mark_as_read()
+	print('Done checking inbox')
 
-def generate_comment(comment, query):
+def generate_comment(comment, query, automatic):
+	do_not_post = False
 	# Check the blacklist
 	if comment.author.name not in blacklist:
 		comment_reply = ''
@@ -81,13 +100,23 @@ def generate_comment(comment, query):
 			comment_reply = comment_reply + '***\n'
 
 		if comment_reply == '***\n':
-			# Add some text if nothing was found
-			comment_reply = '*The WolframAlpha API did not return anything for this query. Is it valid?*\n***\n'
-		
-		comment_reply = comment_reply + '\n[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
-		comment.reply(comment_reply)
+			if not automatic:
+				comment_reply = '*The WolframAlpha API did not return anything for this query. Is it valid?*\n***\n'
+			else:
+				do_not_post = True
+
+		try:
+			comment_reply = comment_reply + '\n[^(Delete (comment author only)^)](https://www.reddit.com/message/compose?to=WolframAlpha-Bot&subject=WolframAlpha-Bot%20Deletion&message=delete+' + comment.permalink + ') ^| '
+		except AttributeError:
+			comment_reply = comment_reply + '\n'
+
+		comment_reply = comment_reply + '[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
+		if not do_not_post:
+			comment.reply(comment_reply)
+			print('Successfully posted comment.')
+		else:
+			print('Did not post comment.')
 		comment.mark_as_read()
-		print('Successfully posted comment.')
 
 def main():
 	# Read the config
