@@ -165,11 +165,14 @@ def main():
 	
 	while True:
 		comments = praw.helpers.comment_stream(r, 'all', limit=None, verbosity=0)
-		for comment in comments:
-			check_comment(comment, already_done)
-			if inbox_time <= time.time():
-				check_inbox()
-				inbox_time = time.time() + 30
+		try:
+			for comment in comments:
+				check_comment(comment, already_done)
+				if inbox_time <= time.time():
+					check_inbox()
+					inbox_time = time.time() + 30
+		except Exception, e:
+			print('Bot Crashed: ' + e)
 
 if __name__ == '__main__':
 	main()
