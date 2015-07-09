@@ -171,8 +171,8 @@ def main():
 				if inbox_time <= time.time():
 					check_inbox()
 					inbox_time = time.time() + 30
-		except Exception, e:
-			print('Bot Crashed: ' + e)
+		except Exception:
+			print('Bot Crashed, continuing')
 
 if __name__ == '__main__':
 	main()
