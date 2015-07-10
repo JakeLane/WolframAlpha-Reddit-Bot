@@ -41,7 +41,7 @@ def check_comment(comment, already_done):
 	urls = []
 	urls.extend(url_regex.findall(comment.body))
 
-	if urls != [] and comment.id not in already_done:
+	if urls != [] and comment.id not in already_done and comment.subreddit.display_name not in sub_blacklist:
 		print('Found comment with Wolfram URL')
 		# Convert to a usable form
 		query = []
@@ -93,7 +93,7 @@ def upload_image(url):
 def generate_comment(comment, query, automatic):
 	do_not_post = False
 	# Check the blacklist
-	if comment.author.name not in user_blacklist and comment.subreddit.display_name not in sub_blacklist:
+	if comment.author.name not in user_blacklist:
 		comment_reply = ''
 		print('Processing comment')
 		for formula in query:
