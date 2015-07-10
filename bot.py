@@ -15,6 +15,7 @@ import urllib.parse
 
 import praw
 import OAuth2Util
+import pyimgur
 import wolframalpha
 
 def generateConfig():
@@ -24,6 +25,8 @@ def generateConfig():
 	config['main'] = {'OAuth': True}
 	config['main'] = {'Username': 'YOUR_USERNAME'}
 	config['main'] = {'Password': 'YOUR_PASSWORD'}
+	config['main'] = {'imgurID': 'IMGUR_ID'}
+	config['main'] = {'imgurSECRET': 'IMGUR_SECRET'}
 	
 	with open('config.cfg', 'w') as f:
 		config.write(f)
@@ -83,6 +86,10 @@ def check_inbox():
 			comment.mark_as_read()
 	print('Done checking inbox')
 
+def upload_image(url):
+	im = pyimgur.Imgur(imgur_id, imgur_secret)
+	return im.upload_image(url=url).link
+
 def generate_comment(comment, query, automatic):
 	do_not_post = False
 	# Check the blacklist
@@ -95,7 +102,7 @@ def generate_comment(comment, query, automatic):
 				if pod.text: # If there is plaintext
 					comment_reply = comment_reply + '**' + pod.title + '**\n\n\t' + pod.text.replace('\n', '\n\t') + '\n\n'
 				elif pod.main.node.find('img').get('src'): # Try and print an image if it exists
-					comment_reply = comment_reply + '**' + pod.title + '**\n\n[Image](' + pod.main.node.find('img').get('src') + ')\n\n'
+					comment_reply = comment_reply + '**' + pod.title + '**\n\n[Image](' + upload_image(pod.main.node.find('img').get('src')) + ')\n\n'
 				# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
 			comment_reply = comment_reply + '***\n'
 
@@ -131,9 +138,10 @@ def main():
 	oauth = config.getboolean('main', 'oauth')
 	username = config.get('main', 'Username')
 	password = config.get('main', 'Password')
-
-	if (app_id is None):
-		generateConfig()
+	global imgur_id
+	imgur_id = config.get('main', 'imgurID')
+	global imgur_secret
+	imgur_secret = config.get('main', 'imgurSECRET')
 
 	# Get the user blacklist
 	global blacklist
@@ -171,8 +179,8 @@ def main():
 				if inbox_time <= time.time():
 					check_inbox()
 					inbox_time = time.time() + 30
-		except Exception:
-			print('Bot Crashed, continuing')
+		except Exception as e:
+			print('Bot Crashed:', e)
 
 if __name__ == '__main__':
 	main()
