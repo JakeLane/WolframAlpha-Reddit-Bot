@@ -35,7 +35,7 @@ def generateConfig():
 	sys.exit()
 
 def check_comment(comment, already_done):
-	url_regex = re.compile(r'[(]?http[s]?:\/\/(?:www\.)?wolframalpha\.com\/input\/(\?i=[^)]*)[)]?', re.I)
+	url_regex = re.compile(r'[(]?http[s]?:\/\/(?:www\.|m.)?wolframalpha\.com\/input\/(\?i=[^)]*)[)]?', re.I)
 	
 	# Get the joined parameters in a list
 	urls = []
@@ -93,7 +93,7 @@ def upload_image(url):
 def generate_comment(comment, query, automatic):
 	do_not_post = False
 	# Check the blacklist
-	if comment.author.name not in blacklist:
+	if comment.author.name not in user_blacklist and comment.subreddit.display_name not in sub_blacklist:
 		comment_reply = ''
 		print('Processing comment')
 		for formula in query:
@@ -144,9 +144,14 @@ def main():
 	imgur_secret = config.get('main', 'imgurSECRET')
 
 	# Get the user blacklist
-	global blacklist
-	with open('blacklist.txt') as f:
-		blacklist = f.read().splitlines()
+	global user_blacklist
+	with open('user_blacklist.txt') as f:
+		user_blacklist = f.read().splitlines()
+
+	# Get the sub blacklist
+	global sub_blacklist
+	with open('sub_blacklist.txt') as f:
+		sub_blacklist = f.read().splitlines()
 	
 	# OAuth and reddit initialisation
 	global r
