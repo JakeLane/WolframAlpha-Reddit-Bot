@@ -2,3 +2,4 @@ RemindMeBot
 AutoModerator
 plotkarma
 chromabot
+valkyribot
