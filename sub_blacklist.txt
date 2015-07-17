@@ -2,3 +2,4 @@ SVExchange
 pokemontrades
 AskReddit
 AskScience
+PokemonPlaza
