@@ -111,7 +111,7 @@ def generate_comment(comment, queries, automatic):
 			for pod in res.pods:
 				if pod.text: # If there is plaintext
 					comment_reply = comment_reply + '**' + pod.title + '**\n\n\t' + pod.text.replace('\n', '\n\t') + '\n\n'
-				elif pod.main.node.find('img').get('src'): # Try and print an image if it exists
+				if pod.main.node.find('img').get('src'): # Try and print an image if it exists
 					comment_reply = comment_reply + '**' + pod.title + '**\n\n[Image](' + upload_image(pod.main.node.find('img').get('src')) + ')\n\n'
 				# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
 			comment_reply = comment_reply + '***\n'
