@@ -107,7 +107,7 @@ def generate_comment(comment, queries, automatic):
 		comment_reply = ''
 		print('Processing comment')
 		for formula in queries:
-			res = wolframclient.query(formula.query, formula.assumptions)  # Query the api
+			res = wolframclient.query(formula.query, formula.assumptions) # Query the api
 			for pod in res.pods:
 				if pod.text: # If there is plaintext
 					comment_reply = comment_reply + '**' + pod.title + '**\n\n\t' + pod.text.replace('\n', '\n\t') + '\n\n'
@@ -184,16 +184,20 @@ def main():
 	print('WolframAlpha Bot is now running')
 	# Start the main loop
 
-	inbox_time = time.time() + 30
+	oauth_time = time.time() + 3000 # 50 minutes
+	inbox_time = time.time() + 30 # 30 seconds
 	
 	while True:
 		comments = praw.helpers.comment_stream(r, 'all', limit=None, verbosity=0)
 		try:
 			for comment in comments:
+				if oauth and oauth_time <= time.time():
+					o.refresh() # Refresh the oauth token every 50 mins
 				check_comment(comment, already_done)
 				if inbox_time <= time.time():
 					check_inbox()
 					inbox_time = time.time() + 30
+
 		except Exception as e:
 			print('Bot Crashed:', e)
 
