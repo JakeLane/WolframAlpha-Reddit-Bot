@@ -52,7 +52,10 @@ def check_comment(comment, already_done):
 		queries = []
 		for urlend in urls:
 			args = urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)
-			queries.append(Query(args['i'][0], args['a'][0]))
+			if 'a' in args:
+				queries.append(Query(args['i'][0], args['a'][0]))
+			else:
+				queries.append(Query(args['i'][0]))
 		try:
 			generate_comment(comment, queries, True)
 		except HTTPError as e:
@@ -109,13 +112,13 @@ def generate_comment(comment, queries, automatic):
 		for formula in queries:
 			res = wolframclient.query(formula.query, formula.assumptions) # Query the api
 			for pod in res.pods:
-				comment_reply = comment_reply + '**' + pod.title
+				comment_reply += '**' + pod.title + '**\n\n'
 				if pod.text: # If there is plaintext
-					comment_reply = '**\n\n\t' + pod.text.replace('\n', '\n\t') + '\n\n'
+					comment_reply += '\t' + pod.text.replace('\n', '\n\t') + '\n\n'
 				if pod.main.node.find('img').get('src'): # Try and print an image if it exists
-					comment_reply = '**\n\n[Image](' + upload_image(pod.main.node.find('img').get('src')) + ')\n\n'
+					comment_reply += '[Image](' + upload_image(pod.main.node.find('img').get('src'))[:-4] + ')\n\n'
 				# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
-			comment_reply = comment_reply + '***\n'
+			comment_reply += '***\n'
 
 		if comment_reply == '***\n':
 			if not automatic:
@@ -124,11 +127,11 @@ def generate_comment(comment, queries, automatic):
 				do_not_post = True
 
 		try:
-			comment_reply = comment_reply + '\n[^(Delete (comment author only)^)](https://www.reddit.com/message/compose?to=WolframAlpha-Bot&subject=WolframAlpha-Bot%20Deletion&message=delete+' + comment.permalink + ') ^| '
+			comment_reply += '\n[^(Delete (comment author only)^)](https://www.reddit.com/message/compose?to=WolframAlpha-Bot&subject=WolframAlpha-Bot%20Deletion&message=delete+' + comment.permalink + ') ^| '
 		except AttributeError:
-			comment_reply = comment_reply + '\n'
+			comment_reply += '\n'
 
-		comment_reply = comment_reply + '[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
+		comment_reply += '[^About](https://github.com/JakeLane/WolframAlpha-Reddit-Bot) ^| [^(Report a Bug)](https://github.com/JakeLane/WolframAlpha-Reddit-Bot/issues) ^(| Created and maintained by /u/JakeLane)'
 		if not do_not_post:
 			comment.reply(comment_reply)
 			print('Successfully posted comment.')
