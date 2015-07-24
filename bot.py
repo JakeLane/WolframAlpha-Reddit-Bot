@@ -18,6 +18,11 @@ import OAuth2Util
 import pyimgur
 import wolframalpha
 
+class Query(object):
+	def __init__(self, query, assumptions=None):
+		self.query = query
+		self.assumptions = assumptions
+
 def generateConfig():
 	config = configparser.ConfigParser()
 	config.read('config.cfg')
@@ -44,12 +49,12 @@ def check_comment(comment, already_done):
 	if urls != [] and comment.id not in already_done and comment.subreddit.display_name not in sub_blacklist:
 		print('Found comment with Wolfram URL')
 		# Convert to a usable form
-		query = []
+		queries = []
 		for urlend in urls:
-			query.append(urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)['i'][0])
-		
+			args = urllib.parse.parse_qs(urllib.parse.urlparse(urlend).query)
+			queries.append(Query(args['i'][0], args['a'][0]))
 		try:
-			generate_comment(comment, query, True)
+			generate_comment(comment, queries, True)
 		except HTTPError as e:
 			print('HTTPError: Most likely banned')
 		
@@ -60,11 +65,16 @@ def check_inbox():
 	call_regex = re.compile(r'\[(.*)\][ ]?\(\/u\/WolframAlpha-Bot[ ]?\)', re.I)
 	messages = r.get_unread()
 	for comment in messages:
-		query = call_regex.findall(comment.body)
-		if query != []:
+		matches = call_regex.findall(comment.body)
+
+		queries = []
+		for match in matches:
+			queries.append(Query(match))
+
+		if queries != []:
 			print('Found message with query')
 			try:
-				generate_comment(comment, query, False)
+				generate_comment(comment, queries, False)
 			except HTTPError as e:
 				print('HTTPError: Most likely banned')
 		elif comment.body.startswith('delete http'):
@@ -90,14 +100,14 @@ def upload_image(url):
 	im = pyimgur.Imgur(imgur_id, imgur_secret)
 	return im.upload_image(url=url).link
 
-def generate_comment(comment, query, automatic):
+def generate_comment(comment, queries, automatic):
 	do_not_post = False
 	# Check the blacklist
 	if comment.author.name not in user_blacklist:
 		comment_reply = ''
 		print('Processing comment')
-		for formula in query:
-			res = wolframclient.query(formula)  # Query the api
+		for formula in queries:
+			res = wolframclient.query(formula.query, formula.assumptions)  # Query the api
 			for pod in res.pods:
 				if pod.text: # If there is plaintext
 					comment_reply = comment_reply + '**' + pod.title + '**\n\n\t' + pod.text.replace('\n', '\n\t') + '\n\n'
@@ -158,11 +168,11 @@ def main():
 	r = praw.Reddit('WolframAlpha script by /u/JakeLane')
 	r.config.decode_html_entities = True
 	if oauth:
-		print("Using OAuth")
+		print('Using OAuth')
 		o = OAuth2Util.OAuth2Util(r)
 		o.refresh()
 	else:
-		print("Using Cookies")
+		print('Using Cookies')
 		r.login(username, password)
 
 	# Create wolframalpha
