@@ -118,6 +118,9 @@ def generate_comment(comment, queries, automatic):
 				if pod.main.node.find('img').get('src'): # Try and print an image if it exists
 					comment_reply += '[Image](' + upload_image(pod.main.node.find('img').get('src'))[:-4] + ')\n\n'
 				# Otherwise we pretend nothing was found (as there was no output we can use for this pod)
+				if pod.title == 'Input interpretation' and 'current geoIP location' in pod.text:
+					# Don't post if the geoIP is taken
+					do_not_post = True
 			comment_reply += '***\n'
 
 		if comment_reply == '***\n':
