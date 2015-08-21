@@ -28,6 +28,7 @@ def generateConfig():
 	config.read('config.cfg')
 	config['main'] = {'AppID': 'YOUR_ID_HERE'}
 	config['main'] = {'OAuth': True}
+	config['main'] = {'location': None}
 	config['main'] = {'Username': 'YOUR_USERNAME'}
 	config['main'] = {'Password': 'YOUR_PASSWORD'}
 	config['main'] = {'imgurID': 'IMGUR_ID'}
@@ -113,7 +114,7 @@ def generate_comment(comment, queries, automatic):
 			res = wolframclient.query(formula.query, formula.assumptions) # Query the api
 			for pod in res.pods:
 				comment_reply += '**' + pod.title + '**\n\n'
-				if pod.text: # If there is plaintext
+				if pod.text and pod.text <= 1000: # If there is plaintext
 					comment_reply += '\t' + pod.text.replace('\n', '\n\t') + '\n\n'
 				if pod.main.node.find('img').get('src'): # Try and print an image if it exists
 					comment_reply += '[Image](' + upload_image(pod.main.node.find('img').get('src'))[:-4] + ')\n\n'
@@ -155,6 +156,7 @@ def main():
 	oauth = config.getboolean('main', 'oauth')
 	username = config.get('main', 'Username')
 	password = config.get('main', 'Password')
+	location = config.get('main', 'Location')
 	global imgur_id
 	imgur_id = config.get('main', 'imgurID')
 	global imgur_secret
@@ -184,7 +186,7 @@ def main():
 
 	# Create wolframalpha
 	global wolframclient
-	wolframclient = wolframalpha.Client(app_id)
+	wolframclient = wolframalpha.Client(app_id, location)
 
 	already_done = set()
 		
