@@ -114,7 +114,7 @@ def generate_comment(comment, queries, automatic):
 			res = wolframclient.query(formula.query, formula.assumptions) # Query the api
 			for pod in res.pods:
 				comment_reply += '**' + pod.title + '**\n\n'
-				if pod.text and pod.text <= 1000: # If there is plaintext
+				if pod.text and len(pod.text) <= 100: # If there is plaintext
 					comment_reply += '\t' + pod.text.replace('\n', '\n\t') + '\n\n'
 				if pod.main.node.find('img').get('src'): # Try and print an image if it exists
 					comment_reply += '[Image](' + upload_image(pod.main.node.find('img').get('src'))[:-4] + ')\n\n'
